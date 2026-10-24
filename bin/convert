@@ -1,0 +1,81 @@
+#!/bin/zsh
+emulate -L zsh
+setopt no_unset pipe_fail
+
+SELF="${0:A}"
+ROOT="${SELF:h:h}"
+CORE="${CONVERTER_CORE:-$ROOT/libexec/convert_core.py}"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}/macos-converter"
+VENV="$DATA/venv"
+PY="$VENV/bin/python"
+READY="$VENV/.ready"
+DEPS=(pymupdf pdf2docx)
+
+find_python() {
+  local c v
+  for c in /opt/homebrew/opt/python@3.13/bin/python3.13 /usr/local/opt/python@3.13/bin/python3.13 \
+           /opt/homebrew/bin/python3.13 /opt/homebrew/bin/python3.12 /opt/homebrew/bin/python3.11 \
+           /usr/local/bin/python3.13 /usr/local/bin/python3.12 /usr/local/bin/python3.11 \
+           python3.13 python3.12 python3.11 python3.10 python3; do
+    command -v "$c" >/dev/null 2>&1 || continue
+    v="$("$c" -c 'import sys; print(sys.version_info >= (3, 9))' 2>/dev/null)"
+    if [[ "$v" == "True" ]]; then
+      command -v "$c"
+      return 0
+    fi
+  done
+  return 1
+}
+
+setup_env() {
+  local base
+  base="$(find_python)" || {
+    print -u2 "Error: Python 3.9 or newer not found. Install it: brew install python"
+    return 1
+  }
+  print "Installing dependencies (${DEPS[*]}) into $VENV ..."
+  rm -rf "$VENV"
+  mkdir -p "$DATA" || return 1
+  if ! "$base" -m venv "$VENV"; then
+    print -u2 "Error: cannot create a virtual environment"
+    return 1
+  fi
+  "$PY" -m pip install -q --upgrade pip >/dev/null 2>&1
+  if ! "$PY" -m pip install -q "${DEPS[@]}"; then
+    print -u2 "Error: pip could not install dependencies. Check your connection and run: convert --setup"
+    return 1
+  fi
+  print -r -- "${DEPS[*]}" > "$READY"
+  print "Done."
+}
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  print -u2 "Error: convert works on macOS only"
+  exit 1
+fi
+
+if [[ ! -f "$CORE" ]]; then
+  print -u2 "Error: $CORE not found. Reinstall convert"
+  exit 1
+fi
+
+case "${1:-}" in
+  --setup)
+    setup_env
+    exit $?
+    ;;
+  ""|-h|--help|help|-v|--version)
+    if [[ -x "$PY" ]]; then
+      exec "$PY" -I "$CORE" "$@"
+    fi
+    base="$(find_python)" || { print -u2 "Error: Python 3.9 or newer not found. Install it: brew install python"; exit 1; }
+    exec "$base" -I "$CORE" "$@"
+    ;;
+esac
+
+if [[ ! -x "$PY" || ! -f "$READY" || "$(<"$READY")" != "${DEPS[*]}" ]]; then
+  print "First run: installing Python dependencies, this takes about a minute."
+  setup_env || exit 1
+fi
+
+exec "$PY" -I "$CORE" "$@"

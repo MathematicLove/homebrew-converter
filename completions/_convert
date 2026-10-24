@@ -1,0 +1,105 @@
+#compdef convert
+
+_convert() {
+  local -a modes opts
+  modes=(
+    'heic-png:HEIC photo to PNG'
+    'heic-jpg:HEIC photo to JPG'
+    'png-heic:PNG to HEIC'
+    'jpg-heic:JPG to HEIC'
+    'png-jpg:PNG to JPG'
+    'jpg-png:JPG to PNG'
+    'webp-png:WebP to PNG'
+    'webp-jpg:WebP to JPG'
+    'img-pdf:several images into one PDF'
+    'pdf-png:PDF pages to PNG folder [N pages]'
+    'pdf-jpg:PDF pages to JPG folder [N pages]'
+    'pdf-txt:PDF to plain text'
+    'pdf-word:PDF to editable DOCX'
+    'pdf-epub:PDF to reflowable EPUB'
+    'epub-pdf:EPUB book to PDF'
+    'word-pdf:Word document to PDF'
+    'word-pages:Word document to Pages'
+    'pages-pdf:Pages document to PDF'
+    'pages-word:Pages document to DOCX'
+    'numbers-xlsx:Numbers to Excel XLSX'
+    'numbers-pdf:Numbers to PDF'
+    'xlsx-numbers:Excel or CSV to Numbers'
+    'key-pdf:Keynote to PDF'
+    'key-pptx:Keynote to PowerPoint'
+    'pptx-key:PowerPoint to Keynote'
+    'pptx-pdf:PowerPoint to PDF'
+    'mov-mp4:MOV video to MP4'
+  )
+  opts=(
+    '-d:folder to save results'
+    '--dir:folder to save results'
+    '-o:output file name'
+    '--output:output file name'
+    '-f:overwrite existing files'
+    '--force:overwrite existing files'
+    '-h:show help'
+    '--help:show help'
+  )
+
+  if (( CURRENT == 2 )); then
+    if [[ "$PREFIX" == -* ]]; then
+      local -a first=('-h:show help' '--help:show help' '-v:show version' '--version:show version' '--setup:reinstall dependencies')
+      _describe -t options 'option' first
+    else
+      _describe -t modes 'conversion mode' modes
+    fi
+    return
+  fi
+
+  local mode="${words[2]}" prev="${words[CURRENT-1]}" pat
+  case "$mode" in
+    heic-*) pat='*.(#i)(heic|heif)' ;;
+    png-*) pat='*.(#i)png' ;;
+    jpg-*) pat='*.(#i)(jpg|jpeg)' ;;
+    webp-*) pat='*.(#i)webp' ;;
+    img-*) pat='*.(#i)(png|jpg|jpeg|heic|heif|webp|tif|tiff|gif|bmp)' ;;
+    pdf-*) pat='*.(#i)pdf' ;;
+    epub-*) pat='*.(#i)epub' ;;
+    word-*) pat='*.(#i)(doc|docx|docm|rtf|odt)' ;;
+    pages-*) pat='*.(#i)pages' ;;
+    numbers-*) pat='*.(#i)numbers' ;;
+    xlsx-*) pat='*.(#i)(xlsx|xls|csv)' ;;
+    key-*) pat='*.(#i)key' ;;
+    pptx-*) pat='*.(#i)(ppt|pptx|pptm)' ;;
+    mov-*) pat='*.(#i)(mov|m4v|mp4)' ;;
+    *) pat='*' ;;
+  esac
+
+  if [[ "$prev" == (-d|--dir) ]]; then
+    _files -/
+    return
+  fi
+
+  if [[ "$prev" == (-o|--output) ]]; then
+    _message 'output file name'
+    return
+  fi
+
+  if [[ "$PREFIX" == -* ]]; then
+    _describe -t options 'option' opts
+    return
+  fi
+
+  if [[ "$mode" == pdf-(png|jpg) && "$prev" == (#i)*.pdf ]]; then
+    local f="${~prev}" n=""
+    [[ -f "$f" ]] && n="$(mdls -raw -name kMDItemNumberOfPages -- "$f" 2>/dev/null)"
+    if [[ "$n" != <-> && -f "$f" ]] && (( $+commands[pdfinfo] )); then
+      n="$(pdfinfo -- "$f" 2>/dev/null | awk '/^Pages:/ {print $2}')"
+    fi
+    if [[ "$n" == <-> ]]; then
+      _message "number of pages: 1 to $n (empty = all)"
+    else
+      _message 'number of pages (empty = all)'
+    fi
+  fi
+
+  _files -g "$pat"
+}
+
+_convert "$@"

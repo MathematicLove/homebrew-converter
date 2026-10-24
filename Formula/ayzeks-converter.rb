@@ -2,7 +2,7 @@ class AyzeksConverter < Formula
   desc "Convert HEIC, PDF, EPUB, Office, iWork and video files with one command"
   homepage "https://github.com/MathematicLove/homebrew-converter"
   url "https://github.com/MathematicLove/homebrew-converter/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  sha256 "f202a7e1219c336dd9514bcdff29418b94e134a58819e847509bd21a87daa8e7"
   license "MIT"
   head "https://github.com/MathematicLove/homebrew-converter.git", branch: "main"
 

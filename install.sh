@@ -43,7 +43,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 SRC="${CONVERTER_SRC:-}"
-if [[ -z "$SRC" && -f "${0:A:h}/bin/convert" && -f "${0:A:h}/libexec/convert_core.py" ]]; then
+if [[ -z "$SRC" && "${0:t}" == "install.sh" && -f "$0" && -f "${0:A:h}/bin/convert" && -f "${0:A:h}/libexec/convert_core.py" ]]; then
   SRC="${0:A:h}"
 fi
 

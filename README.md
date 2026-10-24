@@ -46,14 +46,12 @@ Requirements: macOS 12 or newer and zsh (the default shell on macOS).
 
 ```sh
 brew tap MathematicLove/converter
+brew trust MathematicLove/converter
 brew install ayzeks-converter
 ```
 
-or in one line:
-
-```sh
-brew install MathematicLove/converter/ayzeks-converter
-```
+`brew trust` is needed on Homebrew 7 and newer, which only loads formulae from third-party taps you trust.
+On older Homebrew versions skip that line.
 
 To get Tab completion, add this line to `~/.zshrc` after `compinit`:
 
